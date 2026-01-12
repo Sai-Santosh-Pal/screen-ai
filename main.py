@@ -3,7 +3,8 @@ import os
 import requests
 import base64
 import mss
-import datetime
+import datetime, random, time
+import json as json_imported
 
 load_dotenv()
 api_key = os.getenv("API_KEY")
@@ -12,7 +13,7 @@ def encode_img(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-def ask(img, prompt):
+def ask(img):
     image_data = encode_img(img)
     response = requests.post(
         "https://ai.hackclub.com/proxy/v1/chat/completions",
@@ -21,32 +22,26 @@ def ask(img, prompt):
             "Content-Type": "application/json"
         },
         json={
-            "model": "openai/gpt-5.1", # or google/gemini-2.5-flash
+            "model": "qwen/qwen3-vl-235b-a22b-instruct", #"openai/gpt-5.1", # or google/gemini-2.5-flash
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {"type": "text", "text": """
-                        SYSTEM: YOU ARE A SCREEN CONTROL REFLEX AGENT. YOU SEE EXACTLY ONE SCREENSHOT AT A TIME. YOU MUST OUTPUT EXACTLY ONE ACTION IN STRICT JSON. YOU MUST NEVER PLAN AHEAD, DESCRIBE, OR INCLUDE MULTIPLE STEPS TO GET TO THE GOAL, OR DESCRIBE, OR INCLUDE MULTIPLE STEPS. COORDINATES HAVE TO BE PIXEL PERFECT SO MAKE SURE YOU CALCULATE PROPERLY (IN PIXELS) ORIGIN AT TOP-LEFT, ALSO TAKE CARE OF THE SCREENSHOT'S RESOLUTION. IF NO ACTION IS REQUIRED, SET "done": true. I REPEAT DO NOT AT ALL INCLUDE ANY EXPLAINATIONS OR TEXT OUTSIDE THE JSON.
+                        SYSTEM: YOU ARE A SCREEN CONENT ANALYZER. YOU SEE EXACTLY ONE SCREENSHOT AT A TIME. YOU MUST OUTPUT EXACTLY ONE ACTION IN STRICT JSON. YOU MUST NEVER ADD UP THINGS ON YOUR OWN AND FOCUS ONLY ON THE SCREENSHOT'S OVERVIEW
 
-                        USER: HERE IS THE ATTACHED SCREENSHOT AND TASK GOAL = """ + prompt + """. ANALYZE THE SCREENSHOT ONLY AND ONLY, OUTPUT A SINGLE ACTION IN JSON WITH FOLLOWING FORMATING ONLY:
+                        USER: HERE IS THE ATTACHED SCREENSHOT ANALYZE THE SCREENSHOT ONLY AND ONLY, OUTPUT A SINGLE ACTION IN JSON WITH FOLLOWING FORMATING ONLY:
                         {
                             "action": {
-                                "type": "click" | "move" | "type" | "scroll" | "wait" | "noop",
-                                "x": <integer, pixel value coordinate, optional for type/scroll/wait/noop>,
-                                "y": <integer, pixel value coordinate, optional for type/scroll/wait/noop>,
-                                "button": "left" | "right" | null,
-                                "text": "<string, only for type action>",
-                                "duration": <integer, ms, optional for wait>
-                            },
-                            "done": <true|false>,
-                            "remarks": "<string, only if necessary>"
+                                "type": "study" | "coding" | "learning" | "doomscrolling" | "other",
+                                "text": "<string, remarks in detail>"
+                            }
                         }
                         CONSTRAINTS:
+                        0. The text should be not state - The screenshot - instead - You were...
                         1. OUTPUT MUST BE VALID JSON AND PARSEABLE
-                        2. ONLY INCLUDE ONE ACTION PER OUTPUT JSON
+                        2. ONLY INCLUDE ONE ACTION
                         3. DONT ADD COMMENTARY OR ANY EXTRAS
-                        4. IF NO ACTION, IS POSSIBLE, RETURN - {"action":{"type":"noop"},"done":<true|false>, "remarks": "<string>"}
                         """},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
                     ]
@@ -64,9 +59,32 @@ def take_ss():
     return path.strftime("%H-%M-%S-%d-%m-%Y.png")
 
 
-def get_next_task(goal):
-    print(goal)
+def get_info():
     current_pos = take_ss()
-    return ask(current_pos, goal)
+    return ask(current_pos)
 
-print(get_next_task("exact coordinates of where should i click to see the extensions in this screenshot"))
+def update_data(json):
+    time = datetime.datetime.now()
+    json = json_imported.loads(json)
+    # data[] = {"type": json["action"]["type"], "text": json["action"]["text"]}
+    with open('data.json', "r", encoding="utf-8") as f:
+        data = json_imported.load(f)
+    data[time.strftime("%H-%M-%S-%d-%m-%Y")] = {"type": json["action"]["type"], "text": json["action"]["text"]}
+    print(data)
+
+    with open('data.json', "w", encoding="utf-8") as f:
+        json_imported.dump(data, f, indent=2)
+
+def run():
+    while True:
+        time.sleep(random.randint(0, 5))
+        update_data(get_info())
+
+run()
+# dummy = {
+#     "action": {
+#         "type": "coding",
+#         "text": "You were actively editing Python code in a code editor, implementing functions for API requests and screenshot handling, with the terminal indicating the script is being executed, confirming active coding work."
+#     }
+# }
+# update_data(dummy)
