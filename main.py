@@ -1,18 +1,56 @@
-from openrouter import OpenRouter
+# from openrouter import OpenRouter
+from dotenv import load_dotenv
+import os
 
-client = OpenRouter(
-    api_key="sk-hc-v1-6b1b1b47cb1f44c48b6c7372082df62da2259fec3f0448c2a8bfc4f4338e2576", 
-    server_url="https://ai.hackclub.com/proxy/v1"
+load_dotenv()
+api_key = os.getenv("API_KEY")
+
+# client = OpenRouter(
+#     api_key=api_key, 
+#     server_url="https://ai.hackclub.com/proxy/v1"
+# )
+
+prompt = str(input("Prompt: "))
+
+# response = client.chat.send(
+#     model="openai/gpt-5.1",
+#     messages=[
+#         {"role":"user","content":f"{asked}"}
+#     ],
+#     stream=False
+# )
+
+# print(response.choices[0].message.content)
+
+import requests
+import base64
+
+def encode_img(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+img=input("image: ")
+image_data = encode_img(img)
+
+response = requests.post(
+    "https://ai.hackclub.com/proxy/v1/chat/completions",
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "openai/gpt-5.1", # or google/gemini-2.5-flash
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{prompt}"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+                ]
+            }
+        ]
+    }
 )
 
-asked = str(input("Prompt: "))
-
-response = client.chat.send(
-    model="openai/gpt-5.1",
-    messages=[
-        {"role":"user","content":f"{asked}"}
-    ],
-    stream=False
-)
-
-print(response.choices[0].message.content)
+result = response.json()
+print(result["choices"][0]["message"]["content"])
