@@ -1,3 +1,34 @@
 {
-    
+  "17-59-32-12-01-2026": {
+    "type": "coding",
+    "text": "You were actively editing Python code in a VS Code editor, working on a file named main.py that handles JSON data updates and screen capture functions, with the terminal running the script and file explorer showing related project folders."
+  },
+  "17-59-48-12-01-2026": {
+    "type": "coding",
+    "text": "You were actively editing Python code in a VS Code editor, working on a file named main.py that handles JSON data updates and screen capture functions, with the terminal running the script and file explorer showing related project folders."
+  },
+  "18-00-07-12-01-2026": {
+    "type": "coding",
+    "text": "You were actively editing Python code in a VS Code editor, working on a file named main.py that handles JSON data updates and screen capture functions, with the terminal running the script and file explorer showing related project folders."
+  },
+  "18-00-21-12-01-2026": {
+    "type": "coding",
+    "text": "You were navigating a file system likely related to a project named PokemonRPG, with folders for audio, code, data, and graphics, and opened a context menu with the option to open a terminal, suggesting preparation for development or scripting work."
+  },
+  "18-00-34-12-01-2026": {
+    "type": "coding",
+    "text": "You were viewing a terminal window open in the directory ~/Desktop/PokemonRPG, indicating preparation for or engagement in coding or command-line tasks related to a project named PokemonRPG."
+  },
+  "18-01-58-12-01-2026": {
+    "type": "coding",
+    "text": "You were running a Python script named main.py located in the code directory under PokemonRPG project using pygame-ce 2.5.6, which suggests active development or testing of a game application."
+  },
+  "18-02-08-12-01-2026": {
+    "type": "coding",
+    "text": "You were running a Python script named main.py in a terminal within a project directory called PokemonRPG, using pygame-ce 2.5.6 with Python 3.12.3, and had a file save dialog open for a video file named Peek 2026-01-12 18-01.mp4, indicating active development or testing of a game project."
+  },
+  "18-02-19-12-01-2026": {
+    "type": "coding",
+    "text": "You were actively editing Python code in a VS Code editor, working on a file named main.py that handles JSON data updates and screen capture functions, with the terminal running the script and file explorer showing related project folders."
+  }
 }

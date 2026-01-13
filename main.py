@@ -5,6 +5,8 @@ import base64
 import mss
 import datetime, random, time
 import json as json_imported
+from flask import Flask, render_template
+import threading
 
 load_dotenv()
 api_key = os.getenv("API_KEY")
@@ -80,7 +82,7 @@ def run():
         time.sleep(random.randint(0, 5))
         update_data(get_info())
 
-run()
+# run()
 # dummy = {
 #     "action": {
 #         "type": "coding",
@@ -88,3 +90,35 @@ run()
 #     }
 # }
 # update_data(dummy)
+
+# rendering
+
+app = Flask(__name__)
+
+def loadData():
+    with open('data.json', "r", encoding="utf-8") as f:
+        data = json_imported.load(f)
+
+    parsed=[]
+    # print(data.items())
+    for t, d in data.items():
+        entryTime = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
+        parsed.append({"datetime": entryTime, "type": d.get("type"), "text": d.get("text")})
+    print(parsed)
+
+    parsed.sort(key=lambda x: x["datetime"])
+    return parsed
+
+@app.route("/")
+def index():
+    data = loadData()
+    return render_template("index.html", database=data)
+
+def execute():
+    while True:
+        run()
+
+if __name__ == "__main__":
+    t = threading.Thread(target=execute, daemon=True)
+    t.start()
+    app.run(debug=False)
