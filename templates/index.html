@@ -6,11 +6,58 @@
     <title>ScreenAI</title>
 </head>
 <body>
-    <h1>Recent:</h1>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div style="width: 100%; margin-bottom: 15px;display: flex; align-items: center; justify-content: center;">
+        SCREEN AI
+    </div>
+    <canvas id="chart" style="width: 80%; height: 80%;"></canvas>
+    <h1 style="margin-bottom: -5px;">Recent:</h1>
     {% for i in database %}
-    <h2>{{ i.datetime.strftime("%H-%M-%S-%d-%m-%Y") }}</h2>
-    <p>{{ i.text }}</p>
-    <p><i>{{ i.type }}</i></p>
+    <h2 style="">{{ i.type }}</h2>
+    <p style="margin-top: -5px;">{{ i.text }}</p>
+    <p style="margin-top: -2px; color: #6e6e6e;"><i>{{ i.datetime }}</i></p>
+    <hr style="margin-bottom: 2px; width: 100%; color: grey;">
     {% endfor %}
 </body>
+<style>
+    body {
+        padding: 50px;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        color: #fff;
+        font-family:monospace;
+    }
+</style>
+<script>
+    const raw_data = {{ database | tojson }}
+    const types = {}
+
+    raw_data.forEach(i => {
+        const t = i.type;
+        types[t] = (types[t] || 0) + 1
+    })
+
+    const label = Object.keys(types)
+    const values = Object.values(types)
+
+    const ctx = document.getElementById('chart').getContext('2d')
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: label,
+            datasets: [{
+                data: values
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    })
+</script>
 </html>

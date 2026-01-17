@@ -9,7 +9,10 @@ from flask import Flask, render_template
 import threading
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
+try:
+    api_key = os.getenv("API_KEY")
+except Exception:
+    api_key = input("No API Key Found In .env - Enter Your API Key For HackClub AI:")
 
 def encode_img(path):
     with open(path, "rb") as f:
@@ -72,7 +75,7 @@ def update_data(json):
     with open('data.json', "r", encoding="utf-8") as f:
         data = json_imported.load(f)
     data[time.strftime("%H-%M-%S-%d-%m-%Y")] = {"type": json["action"]["type"], "text": json["action"]["text"]}
-    print(data)
+    # print(data)
 
     with open('data.json', "w", encoding="utf-8") as f:
         json_imported.dump(data, f, indent=2)
@@ -103,8 +106,8 @@ def loadData():
     # print(data.items())
     for t, d in data.items():
         entryTime = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
-        parsed.append({"datetime": entryTime, "type": d.get("type"), "text": d.get("text")})
-    print(parsed)
+        parsed.append({"datetime": entryTime.strftime("%H:%M:%S %d/%m/%Y"), "type": d.get("type"), "text": d.get("text")})
+    # print(parsed)
 
     parsed.sort(key=lambda x: x["datetime"])
     return parsed
