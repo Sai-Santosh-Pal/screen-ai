@@ -3,7 +3,7 @@
 A screen tracker AI which tracks what you really do!
 
 ## Instructions 
-1. Go to Release and download the attached file named - screenai
+1. Go to Releases and download the attached file named - screenai
 2. Open your terminal 
 3. Go to the directory in which the downloaded file is located 
 4. Type `screenai` and press enter
