@@ -1,7 +1,7 @@
 # ScreenAI
 
 A screen tracker AI which tracks what you really do!
-
+CURRENTLY ONLY FOR UBUNTU (sorry)
 ## Instructions 
 1. Go to Releases and download attached file
 2. Open your terminal - PLEASE MAKE SURE YOU RUN ONLY VIA THE TERMINAL 
