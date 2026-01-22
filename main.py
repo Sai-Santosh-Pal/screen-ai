@@ -69,15 +69,17 @@ def get_info():
     return ask(current_pos)
 
 def update_data(json):
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_PATH = os.path.join(BASE_DIR, "data.json")
     time = datetime.datetime.now()
     json = json_imported.loads(json)
     # data[] = {"type": json["action"]["type"], "text": json["action"]["text"]}
-    with open('data.json', "r", encoding="utf-8") as f:
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
         data = json_imported.load(f)
     data[time.strftime("%H-%M-%S-%d-%m-%Y")] = {"type": json["action"]["type"], "text": json["action"]["text"]}
     # print(data)
 
-    with open('data.json', "w", encoding="utf-8") as f:
+    with open(DATA_PATH, "w", encoding="utf-8") as f:
         json_imported.dump(data, f, indent=2)
 
 def run():
@@ -99,7 +101,9 @@ def run():
 app = Flask(__name__)
 
 def loadData():
-    with open('data.json', "r", encoding="utf-8") as f:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_PATH = os.path.join(BASE_DIR, "data.json")
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
         data = json_imported.load(f)
 
     parsed=[]
