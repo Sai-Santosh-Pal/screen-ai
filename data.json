@@ -1,3 +1,22 @@
 {
-  
+  "13-21-51-22-01-2026": {
+    "type": "coding",
+    "text": "You were running a Flask application from the terminal within a code editor, with build output and server startup logs visible, indicating active development or testing of a web app."
+  },
+  "13-22-19-22-01-2026": {
+    "type": "coding",
+    "text": "You were running a Flask development server for a project named 'ScreenAI', with terminal output showing HTTP requests and server warnings, alongside an open code editor displaying project files like main.py, data.json, and templates."
+  },
+  "13-22-28-22-01-2026": {
+    "type": "coding",
+    "text": "You were running a Flask development server for a project named 'ScreenAI', with terminal output showing server logs and active HTTP requests, indicating active code execution and debugging."
+  },
+  "13-22-51-22-01-2026": {
+    "type": "coding",
+    "text": "You were running a local Flask development server for a project named ScreenAI, with terminal output showing HTTP requests and server status, indicating active code execution and debugging."
+  },
+  "13-22-59-22-01-2026": {
+    "type": "coding",
+    "text": "You were running a local Flask server for a project named 'ScreenAI', with terminal logs showing HTTP requests and server warnings. The IDE displayed project files including main.py, requirements.txt, and templates, alongside a live preview of a pie chart labeled 'SCREEN AI'."
+  }
 }

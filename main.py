@@ -120,8 +120,9 @@ def index():
 def execute():
     while True:
         run()
+        time.sleep(1)
 
 if __name__ == "__main__":
     t = threading.Thread(target=execute, daemon=True)
     t.start()
-    app.run(debug=False)
+    app.run(host="0.0.0.0", port=5000, use_reloader=False)

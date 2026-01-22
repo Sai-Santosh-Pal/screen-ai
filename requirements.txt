@@ -1,0 +1,4 @@
+Flask
+mss
+requests
+python-dotenv
