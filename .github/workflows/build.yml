@@ -38,7 +38,7 @@ jobs:
           pyinstaller --onefile --name ScreenAI main.py
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ScreenAI-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
