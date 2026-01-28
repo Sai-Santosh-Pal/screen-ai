@@ -16,11 +16,6 @@ jobs:
           - os: windows-latest
             arch: x86_64
             platform: windows
-          
-          # Linux (x86_64)
-          - os: ubuntu-latest
-            arch: x86_64
-            platform: linux
     
     runs-on: ${{ matrix.os }}
     
@@ -39,11 +34,6 @@ jobs:
       
       - name: Build executable with PyInstaller (Windows)
         if: matrix.platform == 'windows'
-        run: |
-          pyinstaller --onefile --name ScreenAI main.py
-      
-      - name: Build executable with PyInstaller (Linux x86_64)
-        if: matrix.arch == 'x86_64' && matrix.platform == 'linux'
         run: |
           pyinstaller --onefile --name ScreenAI main.py
       
