@@ -21,11 +21,6 @@ jobs:
           - os: ubuntu-latest
             arch: x86_64
             platform: linux
-          
-          # Linux (ARM64) - using ubuntu-latest with QEMU
-          - os: ubuntu-latest
-            arch: arm64
-            platform: linux-arm64
     
     runs-on: ${{ matrix.os }}
     
@@ -51,19 +46,6 @@ jobs:
         if: matrix.arch == 'x86_64' && matrix.platform == 'linux'
         run: |
           pyinstaller --onefile --name ScreenAI main.py
-      
-      - name: Set up QEMU for ARM64 (Linux ARM64)
-        if: matrix.platform == 'linux-arm64'
-        uses: docker/setup-qemu-action@v3
-      
-      - name: Build executable with PyInstaller (Linux ARM64)
-        if: matrix.platform == 'linux-arm64'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.arm64
-          platforms: linux/arm64
-          outputs: type=local,dest=./dist
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
