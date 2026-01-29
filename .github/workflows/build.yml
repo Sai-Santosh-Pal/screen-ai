@@ -33,10 +33,12 @@ jobs:
           pip install -r requirements.txt
       
       - name: Decrypt .env file
+        shell: bash
         run: |
           echo "${{ secrets.ENV_PASSPHRASE }}" | openssl enc -d -aes-256-cbc -in .env.enc -out .env -pass stdin
       
       - name: Build executable with PyInstaller
+        shell: bash
         run: |
           pyinstaller --onefile \
             --hidden-import=flask.cli \
