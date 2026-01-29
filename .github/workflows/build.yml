@@ -41,6 +41,7 @@ jobs:
         shell: bash
         run: |
           pyinstaller --onefile \
+            --name ScreenAI \
             --hidden-import=flask.cli \
             --add-data ".env:." \
             --add-data "data.json:." \
