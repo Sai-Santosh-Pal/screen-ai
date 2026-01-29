@@ -32,10 +32,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Build executable with PyInstaller (Windows)
-        if: matrix.platform == 'windows'
+      - name: Decrypt .env file
         run: |
-          pyinstaller --onefile --name ScreenAI main.py
+          echo "${{ secrets.ENV_PASSPHRASE }}" | openssl enc -d -aes-256-cbc -in .env.enc -out .env -pass stdin
+      
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller --onefile \
+            --hidden-import=flask.cli \
+            --add-data ".env:." \
+            --add-data "data.json:." \
+            --add-data "templates:templates" \
+            main.py
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
