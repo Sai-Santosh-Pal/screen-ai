@@ -21,4 +21,5 @@ A screen tracker AI which tracks what you really do!
 - You could see details and a chart of what you're doing
 - p.s - on the first run, you must use some applications for 1-2 minutes to see the charts and other things
   
-AI USAGE: Only used to fix chart bugs and helped me in packaging the application for Windows using Github Actions
+
+*AI USAGE*: Only used to fix chart bugs and helped me in packaging the application for Windows using Github Actions
