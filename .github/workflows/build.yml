@@ -43,9 +43,9 @@ jobs:
           pyinstaller --onefile \
             --name ScreenAI \
             --hidden-import=flask.cli \
-            --add-data ".env:." \
-            --add-data "data.json:." \
-            --add-data "templates:templates" \
+            --add-data ".env;." \
+            --add-data "data.json;." \
+            --add-data "templates;templates" \
             main.py
       
       - name: Upload artifacts
