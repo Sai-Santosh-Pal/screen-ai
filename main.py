@@ -14,10 +14,13 @@ try:
 except Exception:
     api_key = input("No API Key Found In .env - Enter Your API Key For HackClub AI:")
 
+
 def encode_img(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
+
+# unchanged (per instruction)
 def ask(img):
     image_data = encode_img(img)
     response = requests.post(
@@ -27,7 +30,7 @@ def ask(img):
             "Content-Type": "application/json"
         },
         json={
-            "model": "qwen/qwen3-vl-235b-a22b-instruct", #"openai/gpt-5.1", # or google/gemini-2.5-flash
+            "model": "qwen/qwen3-vl-235b-a22b-instruct",
             "messages": [
                 {
                     "role": "user",
@@ -57,76 +60,97 @@ def ask(img):
     result = response.json()
     return result["choices"][0]["message"]["content"]
 
+
 def take_ss():
-    path = datetime.datetime.now()
+    now = datetime.datetime.now()
+    filename = now.strftime("%H-%M-%S-%d-%m-%Y.png")
     with mss.mss() as sct:
-        sct.shot(output=path.strftime("%H-%M-%S-%d-%m-%Y.png"))
-    return path.strftime("%H-%M-%S-%d-%m-%Y.png")
+        sct.shot(output=filename)
+    return filename
 
 
 def get_info():
     current_pos = take_ss()
     return ask(current_pos)
 
-def update_data(json):
+
+# fixed: no json shadowing + safe file handling
+def update_data(json_text):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_PATH = os.path.join(BASE_DIR, "data.json")
-    time = datetime.datetime.now()
-    json = json_imported.loads(json)
-    # data[] = {"type": json["action"]["type"], "text": json["action"]["text"]}
+    now = datetime.datetime.now()
+
+    parsed = json_imported.loads(json_text)
+
+    if not os.path.exists(DATA_PATH):
+        with open(DATA_PATH, "w") as f:
+            f.write("{}")
+
     with open(DATA_PATH, "r", encoding="utf-8") as f:
-        data = json_imported.load(f)
-    data[time.strftime("%H-%M-%S-%d-%m-%Y")] = {"type": json["action"]["type"], "text": json["action"]["text"]}
-    # print(data)
+        try:
+            data = json_imported.load(f)
+        except:
+            data = {}
+
+    data[now.strftime("%H-%M-%S-%d-%m-%Y")] = {
+        "type": parsed["action"]["type"],
+        "text": parsed["action"]["text"]
+    }
 
     with open(DATA_PATH, "w", encoding="utf-8") as f:
         json_imported.dump(data, f, indent=2)
 
-def run():
+
+# fixed: single clean worker loop
+def worker_loop():
     while True:
-        time.sleep(random.randint(0, 5))
-        update_data(get_info())
+        try:
+            update_data(get_info())
+        except Exception as e:
+            print("Worker error:", e)
+        time.sleep(random.randint(3, 8))
 
-# run()
-# dummy = {
-#     "action": {
-#         "type": "coding",
-#         "text": "You were actively editing Python code in a code editor, implementing functions for API requests and screenshot handling, with the terminal indicating the script is being executed, confirming active coding work."
-#     }
-# }
-# update_data(dummy)
 
-# rendering
+# Flask app
 
 app = Flask(__name__)
 
+
+# fixed: safe load + correct datetime sorting
 def loadData():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_PATH = os.path.join(BASE_DIR, "data.json")
+
+    if not os.path.exists(DATA_PATH):
+        return []
+
     with open(DATA_PATH, "r", encoding="utf-8") as f:
-        data = json_imported.load(f)
+        try:
+            data = json_imported.load(f)
+        except:
+            return []
 
-    parsed=[]
-    # print(data.items())
+    parsed = []
     for t, d in data.items():
-        entryTime = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
-        parsed.append({"datetime": entryTime.strftime("%H:%M:%S %d/%m/%Y"), "type": d.get("type"), "text": d.get("text")})
-    # print(parsed)
+        entry = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
+        parsed.append({
+            "dt": entry,
+            "datetime": entry.strftime("%H:%M:%S %d/%m/%Y"),
+            "type": d.get("type"),
+            "text": d.get("text")
+        })
 
-    parsed.sort(key=lambda x: x["datetime"])
+    parsed.sort(key=lambda x: x["dt"])
     return parsed
+
 
 @app.route("/")
 def index():
     data = loadData()
     return render_template("index.html", database=data)
 
-def execute():
-    while True:
-        run()
-        time.sleep(1)
 
 if __name__ == "__main__":
-    t = threading.Thread(target=execute, daemon=True)
+    t = threading.Thread(target=worker_loop, daemon=True)
     t.start()
     app.run(host="0.0.0.0", port=5000, use_reloader=False)
