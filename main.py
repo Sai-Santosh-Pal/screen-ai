@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+import sys
 import requests
 import base64
 import mss
@@ -9,6 +10,18 @@ from flask import Flask, render_template
 import threading
 
 load_dotenv()
+
+
+# Robust path resolution for both normal Python and PyInstaller exe
+def get_base_dir():
+    """Get the directory where the script/exe is located"""
+    if getattr(sys, 'frozen', False):
+        # Running as compiled exe
+        return sys._MEIPASS
+    else:
+        # Running as normal Python script
+        return os.path.dirname(os.path.abspath(__file__))
+
 try:
     api_key = os.getenv("API_KEY")
 except Exception:
@@ -76,8 +89,7 @@ def get_info():
 
 # fixed: no json shadowing + safe file handling
 def update_data(json_text):
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_PATH = os.path.join(BASE_DIR, "data.json")
+    DATA_PATH = os.path.join(get_base_dir(), "data.json")
     now = datetime.datetime.now()
 
     parsed = json_imported.loads(json_text)
@@ -99,6 +111,7 @@ def update_data(json_text):
 
     with open(DATA_PATH, "w", encoding="utf-8") as f:
         json_imported.dump(data, f, indent=2)
+        json_imported.dump(data, f, indent=2)
 
 
 # fixed: single clean worker loop
@@ -118,8 +131,7 @@ app = Flask(__name__)
 
 # fixed: safe load + correct datetime sorting
 def loadData():
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_PATH = os.path.join(BASE_DIR, "data.json")
+    DATA_PATH = os.path.join(get_base_dir(), "data.json")
 
     if not os.path.exists(DATA_PATH):
         return []
