@@ -11,32 +11,23 @@ import threading
 
 load_dotenv()
 
-
-# Robust path resolution for both normal Python and PyInstaller exe
 def get_base_dir():
-    """Get the directory where the script/exe is located"""
     if getattr(sys, 'frozen', False):
-        # Running as compiled exe
         return sys._MEIPASS
     else:
-        # Running as normal Python script
         return os.path.dirname(os.path.abspath(__file__))
 
-try:
-    api_key = os.getenv("API_KEY")
-except Exception:
-    api_key = input("No API Key Found In .env - Enter Your API Key For HackClub AI:")
-
+api_key = os.getenv("API_KEY")
+if not api_key:
+    api_key = input("HCAI API KEY: ")
 
 def encode_img(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-
-# unchanged (per instruction)
 def ask(img):
     image_data = encode_img(img)
-    response = requests.post(
+    r = requests.post(
         "https://ai.hackclub.com/proxy/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {api_key}",
@@ -49,30 +40,38 @@ def ask(img):
                     "role": "user",
                     "content": [
                         {"type": "text", "text": """
-                        SYSTEM: YOU ARE A SCREEN CONENT ANALYZER. YOU SEE EXACTLY ONE SCREENSHOT AT A TIME. YOU MUST OUTPUT EXACTLY ONE ACTION IN STRICT JSON. YOU MUST NEVER ADD UP THINGS ON YOUR OWN AND FOCUS ONLY ON THE SCREENSHOT'S OVERVIEW
-
-                        USER: HERE IS THE ATTACHED SCREENSHOT ANALYZE THE SCREENSHOT ONLY AND ONLY, OUTPUT A SINGLE ACTION IN JSON WITH FOLLOWING FORMATING ONLY:
-                        {
-                            "action": {
-                                "type": "study" | "coding" | "learning" | "doomscrolling" | "other",
-                                "text": "<string, remarks in detail>"
-                            }
-                        }
-                        CONSTRAINTS:
-                        0. The text should be not state - The screenshot - instead - You were...
-                        1. OUTPUT MUST BE VALID JSON AND PARSEABLE
-                        2. ONLY INCLUDE ONE ACTION
-                        3. DONT ADD COMMENTARY OR ANY EXTRAS
-                        """},
+SYSTEM: YOU ARE A SCREEN CONENT ANALYZER. YOU SEE EXACTLY ONE SCREENSHOT AT A TIME. YOU MUST OUTPUT EXACTLY ONE ACTION IN STRICT JSON. YOU MUST NEVER ADD UP THINGS ON YOUR OWN AND FOCUS ONLY ON THE SCREENSHOT'S OVERVIEW
+USER: HERE IS THE ATTACHED SCREENSHOT ANALYZE THE SCREENSHOT ONLY AND ONLY, OUTPUT A SINGLE ACTION IN JSON WITH FOLLOWING FORMATING ONLY:
+{
+    "action": {
+        "type": "study" | "coding" | "learning" | "doomscrolling" | "other",
+        "text": "<string, remarks in detail>"
+    }
+}
+CONSTRAINTS:
+0. The text should be not state - The screenshot - instead - You were...
+1. OUTPUT MUST BE VALID JSON AND PARSEABLE
+2. ONLY INCLUDE ONE ACTION
+3. DONT ADD COMMENTARY OR ANY EXTRAS
+"""},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
                     ]
                 }
             ]
-        }
+        },
+        timeout=60
     )
-    result = response.json()
-    return result["choices"][0]["message"]["content"]
 
+    if r.status_code != 200:
+        raise RuntimeError(r.text)
+
+    payload = r.json()
+    content = payload.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+    if not content:
+        raise ValueError("empty model output")
+
+    json_imported.loads(content)
+    return content
 
 def take_ss():
     now = datetime.datetime.now()
@@ -81,66 +80,63 @@ def take_ss():
         sct.shot(output=filename)
     return filename
 
-
 def get_info():
-    current_pos = take_ss()
-    return ask(current_pos)
+    img = take_ss()
+    try:
+        return ask(img)
+    finally:
+        if os.path.exists(img):
+            os.remove(img)
 
+lock = threading.Lock()
 
-# fixed: no json shadowing + safe file handling
 def update_data(json_text):
     DATA_PATH = os.path.join(get_base_dir(), "data.json")
     now = datetime.datetime.now()
-
     parsed = json_imported.loads(json_text)
 
-    if not os.path.exists(DATA_PATH):
-        with open(DATA_PATH, "w") as f:
-            f.write("{}")
+    with lock:
+        if not os.path.exists(DATA_PATH):
+            with open(DATA_PATH, "w") as f:
+                f.write("{}")
 
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        try:
-            data = json_imported.load(f)
-        except:
-            data = {}
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
+            try:
+                data = json_imported.load(f)
+            except:
+                data = {}
 
-    data[now.strftime("%H-%M-%S-%d-%m-%Y")] = {
-        "type": parsed["action"]["type"],
-        "text": parsed["action"]["text"]
-    }
+        data[now.strftime("%H-%M-%S-%d-%m-%Y")] = {
+            "type": parsed["action"]["type"],
+            "text": parsed["action"]["text"]
+        }
 
-    with open(DATA_PATH, "w", encoding="utf-8") as f:
-        json_imported.dump(data, f, indent=2)
-        json_imported.dump(data, f, indent=2)
+        with open(DATA_PATH, "w", encoding="utf-8") as f:
+            json_imported.dump(data, f, indent=2)
 
-
-# fixed: single clean worker loop
 def worker_loop():
     while True:
         try:
-            update_data(get_info())
+            text = get_info()
+            if text.strip():
+                update_data(text)
         except Exception as e:
-            print("Worker error:", e)
-        time.sleep(random.randint(3, 8))
-
-
-# Flask app
+            print("Worker error:", repr(e))
+        time.sleep(random.randint(5, 12))
 
 app = Flask(__name__)
 
-
-# fixed: safe load + correct datetime sorting
 def loadData():
     DATA_PATH = os.path.join(get_base_dir(), "data.json")
-
     if not os.path.exists(DATA_PATH):
         return []
 
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        try:
-            data = json_imported.load(f)
-        except:
-            return []
+    with lock:
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
+            try:
+                data = json_imported.load(f)
+            except:
+                return []
 
     parsed = []
     for t, d in data.items():
@@ -155,12 +151,10 @@ def loadData():
     parsed.sort(key=lambda x: x["dt"])
     return parsed
 
-
 @app.route("/")
 def index():
     data = loadData()
     return render_template("index.html", database=data)
-
 
 if __name__ == "__main__":
     t = threading.Thread(target=worker_loop, daemon=True)
