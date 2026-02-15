@@ -11,15 +11,8 @@ import threading
 
 load_dotenv()
 
-def get_base_dir():
-    if getattr(sys, 'frozen', False):
-        return sys._MEIPASS
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
-
-api_key = os.getenv("API_KEY")
-if not api_key:
-    api_key = input("HCAI API KEY: ")
+data = {}
+lock = threading.Lock()
 
 def encode_img(path):
     with open(path, "rb") as f:
@@ -34,7 +27,7 @@ def ask(img):
             "Content-Type": "application/json"
         },
         json={
-            "model": "qwen/qwen3-vl-235b-a22b-instruct",
+            "model": "openai/gpt-5-mini",
             "messages": [
                 {
                     "role": "user",
@@ -91,28 +84,15 @@ def get_info():
 lock = threading.Lock()
 
 def update_data(json_text):
-    DATA_PATH = os.path.join(get_base_dir(), "data.json")
+    global data
     now = datetime.datetime.now()
     parsed = json_imported.loads(json_text)
 
     with lock:
-        if not os.path.exists(DATA_PATH):
-            with open(DATA_PATH, "w") as f:
-                f.write("{}")
-
-        with open(DATA_PATH, "r", encoding="utf-8") as f:
-            try:
-                data = json_imported.load(f)
-            except:
-                data = {}
-
         data[now.strftime("%H-%M-%S-%d-%m-%Y")] = {
             "type": parsed["action"]["type"],
             "text": parsed["action"]["text"]
         }
-
-        with open(DATA_PATH, "w", encoding="utf-8") as f:
-            json_imported.dump(data, f, indent=2)
 
 def worker_loop():
     while True:
@@ -127,29 +107,20 @@ def worker_loop():
 app = Flask(__name__)
 
 def loadData():
-    DATA_PATH = os.path.join(get_base_dir(), "data.json")
-    if not os.path.exists(DATA_PATH):
-        return []
-
+    global data
     with lock:
-        with open(DATA_PATH, "r", encoding="utf-8") as f:
-            try:
-                data = json_imported.load(f)
-            except:
-                return []
+        parsed = []
+        for t, d in data.items():
+            entry = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
+            parsed.append({
+                "dt": entry,
+                "datetime": entry.strftime("%H:%M:%S %d/%m/%Y"),
+                "type": d.get("type"),
+                "text": d.get("text")
+            })
 
-    parsed = []
-    for t, d in data.items():
-        entry = datetime.datetime.strptime(t, "%H-%M-%S-%d-%m-%Y")
-        parsed.append({
-            "dt": entry,
-            "datetime": entry.strftime("%H:%M:%S %d/%m/%Y"),
-            "type": d.get("type"),
-            "text": d.get("text")
-        })
-
-    parsed.sort(key=lambda x: x["dt"])
-    return parsed
+        parsed.sort(key=lambda x: x["dt"])
+        return parsed
 
 @app.route("/")
 def index():
